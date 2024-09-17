@@ -23,6 +23,7 @@ import br.com.ap2.ap2_web_api.modules.aluno.useCases.CreateAlunoUseCase;
 import br.com.ap2.ap2_web_api.modules.aluno.useCases.DeleteAlunoUseCase;
 import br.com.ap2.ap2_web_api.modules.aluno.useCases.GetAlunoUseCase;
 import br.com.ap2.ap2_web_api.modules.aluno.useCases.ListAllAlunosUseCase;
+import br.com.ap2.ap2_web_api.modules.aluno.useCases.ListAlunoByNameUseCase;
 import br.com.ap2.ap2_web_api.modules.aluno.useCases.UpdateAlunoUseCase;
 
 @RestController
@@ -44,6 +45,9 @@ public class AlunoController {
 
   @Autowired
   private ListAllAlunosUseCase listAllAlunosUseCase;
+
+  @Autowired
+  private ListAlunoByNameUseCase listAlunoByNameUseCase;
 
   // Cria um novo aluno
   @PostMapping("/")
@@ -105,4 +109,15 @@ public class AlunoController {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao listar alunos: " + e.getMessage());
     }
   }
+  // Listar por usuário
+  @GetMapping("/nome/{nome}")
+  public ResponseEntity<Object> listAlunosByNome(@PathVariable String nome) {
+    try {
+      List<AlunoEntity> alunos = listAlunoByNameUseCase.execute(nome);
+      return ResponseEntity.ok(alunos);
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao buscar alunos: " + e.getMessage());
+    }
+  }
 }
+
