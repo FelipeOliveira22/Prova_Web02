@@ -14,6 +14,7 @@ interface Aluno {
 interface UpdateAlunoModalProps {
   state: boolean;
   handleCloseModal: () => void;
+  setAluno: (aluno: Aluno) => void;
   aluno: Aluno; // Recebendo o aluno como props
 }
 
@@ -26,7 +27,7 @@ const alunoSchema = z.object({
 
 type AlunoFormInputs = z.infer<typeof alunoSchema>;
 
-export default function UpdateAlunoModal({ state, handleCloseModal, aluno }: UpdateAlunoModalProps) {
+export default function UpdateAlunoModal({ state, handleCloseModal, aluno, setAluno }: UpdateAlunoModalProps) {
   const { register, handleSubmit, formState: { errors }, reset } = useForm<AlunoFormInputs>({
     resolver: zodResolver(alunoSchema),
     defaultValues: {
@@ -44,7 +45,17 @@ export default function UpdateAlunoModal({ state, handleCloseModal, aluno }: Upd
       ira: data.ira,
     });
 
+    const newAluno = {
+      id: aluno.id,
+      nome: data.nome,
+      curso: data.curso,
+      ira: data.ira,
+    } 
+
+    setAluno(newAluno)
+
     reset();
+    
     handleCloseModal();
   }
 

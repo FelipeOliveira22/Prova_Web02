@@ -1,3 +1,4 @@
+import Button from '@mui/material/Button'; // Importando o Button
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -5,41 +6,35 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Button from '@mui/material/Button'; // Importando o Button
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/axios';
-import DeleteAlunoModal from './delete-aluno-modal';
 import { Aluno } from '../types/aluno';
+import DeleteAlunoModal from './delete-aluno-modal';
 import UpdateAlunoModal from './update-aluno-modal';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import TextField from '@mui/material/TextField';
 
 interface TableAlunosProps {
   alunos: Aluno[]
   setAlunos: (alunos: Aluno[]) => void
 }
 
-// Schema de validação usando Zod
-const searchSchema = z.object({
-  nome: z.string().min(1, "Nome é obrigatório")
-});
-
-type SearchFormInputs = z.infer<typeof searchSchema>;
-
 export default function TableAlunos({ alunos, setAlunos }: TableAlunosProps) {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openUpdateModal, setOpenUpdateModal] = useState(false);
-  const handleOpenDeleteModal = () => setOpenDeleteModal(true);
+  const [selectedAluno, setSelectedAluno] = useState<Aluno | null>(null);
+  const [media, setMedia] = useState(0);
+  const [pintarAlunos, setPintarAlunos] = useState(false);
   const handleCloseDeleteModal = () => setOpenDeleteModal(false);
-  const handleOpenUpdateModal = () => setOpenUpdateModal(true);
   const handleCloseUpdateModal = () => setOpenUpdateModal(false);
 
-  // Hook do React Hook Form para o formulário de pesquisa
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<SearchFormInputs>({
-    resolver: zodResolver(searchSchema)
-  });
+  const handleOpenDeleteModal = (aluno: Aluno) => {
+    setSelectedAluno(aluno); // Define o aluno a ser excluído
+    setOpenDeleteModal(true);
+  };
+
+  const handleOpenUpdateModal = (aluno: Aluno) => {
+    setSelectedAluno(aluno); // Define o aluno a ser editado
+    setOpenUpdateModal(true);
+  };
 
   // Função para buscar todos os alunos
   const getAllAlunos = useCallback(async () => {
@@ -51,39 +46,56 @@ export default function TableAlunos({ alunos, setAlunos }: TableAlunosProps) {
     }
   }, [setAlunos]);
 
-  // Função para buscar alunos pelo nome
-  const searchAlunoByName = useCallback(async (data: SearchFormInputs) => {
-    try {
-      const response = await api.get(`/aluno?nome=${data.nome}`);
-      setAlunos(response.data);
-    } catch (error) {
-      console.error("Erro ao buscar aluno pelo nome:", error);
-    }
-    reset();
-  }, [setAlunos, reset]);
 
   function filterAlunos(deletedId: string) {
     setAlunos(alunos.filter(aluno => aluno.id !== deletedId))
   }
 
+  function handlePintarAlunos() {
+    setPintarAlunos(!pintarAlunos)
+  }
+
+  function setAluno(updatedAluno: Aluno) {
+    // Encontrar o índice do aluno que será atualizado
+    const alunoIndex = alunos.findIndex(aluno => aluno.id === updatedAluno.id);
+
+    // Se o aluno for encontrado na lista
+    if (alunoIndex !== -1) {
+      // Criar uma nova lista de alunos com o aluno atualizado
+      const updatedAlunos = [...alunos];
+
+      updatedAlunos[alunoIndex] = updatedAluno;
+
+      // Atualizar o estado com a nova lista de alunos
+      setAlunos(updatedAlunos);
+    }
+  }
+
+  const getMedia = useCallback(() => {
+    let total = 0;
+
+    alunos.map(aluno => {
+      total = total + aluno.ira
+    })
+
+    const media = total / alunos.length;
+
+    setMedia(media)
+  }, [alunos])
+
   useEffect(() => {
     getAllAlunos()
-  }, [getAllAlunos])
+    getMedia()
+  }, [getAllAlunos, getMedia])
 
   return (
-    <div className="mt-20 flex flex-col px-32 space-y-9">
+    <div className=" space-y-9">
 
-      {/* Formulário de Pesquisa */}
-      <form onSubmit={handleSubmit(searchAlunoByName)} className="flex items-center gap-4 mb-6">
-        <TextField
-          fullWidth
-          label="Pesquisar por Nome"
-          {...register('nome')}
-          error={!!errors.nome}
-          helperText={errors.nome?.message}
-        />
-        <Button type="submit" variant="contained" color="primary">Pesquisar</Button>
-      </form>
+      <div className='w-full flex justify-end'>
+        <Button type="submit" variant="contained" color="secondary" onClick={handlePintarAlunos}>
+          {pintarAlunos ? <span>Descolorir</span> : <span>Pintar</span>}
+        </Button>
+      </div>
 
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -99,7 +111,14 @@ export default function TableAlunos({ alunos, setAlunos }: TableAlunosProps) {
             {alunos.map((aluno) => (
               <TableRow
                 key={aluno.id}
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                sx={{
+                  '&:last-child td, &:last-child th': { border: 0 },
+                  backgroundColor: pintarAlunos
+                    ? aluno.ira > media
+                      ? '#ADD8E6' // Azul claro se o IRA for maior que a média
+                      : '#FFCCCB' // Vermelho claro se o IRA for menor que a média
+                    : 'inherit', // Cor padrão se `pintarAlunos` for false
+                }}
               >
                 <TableCell component="th" scope="row">
                   {aluno.nome}
@@ -111,7 +130,7 @@ export default function TableAlunos({ alunos, setAlunos }: TableAlunosProps) {
                   <Button
                     variant="contained"
                     color="secondary"
-                    onClick={handleOpenUpdateModal}
+                    onClick={() => handleOpenUpdateModal(aluno)} // Abrir modal de edição
                     style={{ marginRight: '10px' }}
                   >
                     Editar
@@ -120,19 +139,39 @@ export default function TableAlunos({ alunos, setAlunos }: TableAlunosProps) {
                   <Button
                     color="error"
                     variant="outlined"
-                    onClick={handleOpenDeleteModal}
+                    onClick={() => handleOpenDeleteModal(aluno)} // Abrir modal de exclusão
                   >
                     Excluir
                   </Button>
                 </TableCell>
-
-                <DeleteAlunoModal state={openDeleteModal} handleCloseModal={handleCloseDeleteModal} id={aluno.id} filterAlunos={filterAlunos} />
-                <UpdateAlunoModal state={openUpdateModal} handleCloseModal={handleCloseUpdateModal} aluno={aluno} />
               </TableRow>
             ))}
+            <TableCell colSpan={2}> {/* ColSpan ajusta para 2 colunas ou o número necessário */}
+            <strong>Média</strong>: {media.toFixed(2)}
+            </TableCell>
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Modal de exclusão, renderizado fora do loop */}
+      {selectedAluno && (
+        <DeleteAlunoModal
+          state={openDeleteModal}
+          handleCloseModal={handleCloseDeleteModal}
+          id={selectedAluno.id}
+          filterAlunos={filterAlunos}
+        />
+      )}
+
+      {/* Modal de edição, renderizado fora do loop */}
+      {selectedAluno && (
+        <UpdateAlunoModal
+          state={openUpdateModal}
+          handleCloseModal={handleCloseUpdateModal}
+          aluno={selectedAluno}
+          setAluno={setAluno}
+        />
+      )}
     </div>
   );
 }

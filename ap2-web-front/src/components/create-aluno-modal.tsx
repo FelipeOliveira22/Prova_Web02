@@ -12,9 +12,12 @@ interface CreateAlunoModalProps {
 // Definindo o schema de validação com Zod
 const alunoSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
-  curso: z.string().min(1, "Curso é obrigatório"),
-  ira: z.number().min(0, "IRA deve ser um número não negativo").max(10, "IRA deve ser no máximo 10")
+  curso: z
+    .enum(["ES", "EC", "CC", "DD", "RD", "SI", "es", "ec", "cc", "dd", "rd", "si"])
+    .transform((value) => value.toUpperCase()), // Apenas transforma para maiúsculas
+  ira: z.number().min(0, "IRA deve ser um número não negativo").max(10, "IRA deve ser no máximo 10"),
 });
+
 
 type AlunoFormInputs = z.infer<typeof alunoSchema>;
 
@@ -59,7 +62,7 @@ export default function CreateAlunoModal({ open, handleCloseModal }: CreateAluno
             label="Curso"
             {...register('curso')}
             error={!!errors.curso}
-            helperText={errors.curso?.message}
+            helperText={!!errors.curso && "Digite apenas a sigla do curso e válida(ES, EC, CC, DD, SI, RD)"}
           />
           <TextField
             fullWidth

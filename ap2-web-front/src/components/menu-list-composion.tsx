@@ -9,8 +9,11 @@ import MenuList from '@mui/material/MenuList';
 import Stack from '@mui/material/Stack';
 import { useState } from 'react';
 import CreateAlunoModal from './create-aluno-modal';
+import { useNavigate } from 'react-router-dom';
 
 export default function MenuListComposition() {
+  const navigate = useNavigate()
+
   const [open, setOpen] = useState(false);
   const anchorRef = React.useRef<HTMLButtonElement>(null);
   const [openModal, setOpenModal] = useState(false);
@@ -39,6 +42,14 @@ export default function MenuListComposition() {
     } else if (event.key === 'Escape') {
       setOpen(false);
     }
+  }
+
+  function handleNavigateAlunosPorCurso() {
+    navigate("/alunos-cursos")
+  }
+
+  function handleNavigateHome() {
+    navigate("/")
   }
 
   // return focus to the button when we transitioned from !open -> open
@@ -90,8 +101,8 @@ export default function MenuListComposition() {
                     onKeyDown={handleListKeyDown}
                   >
                     <MenuItem onClick={handleOpenModal}>Criar</MenuItem>
-                    <MenuItem onClick={handleClose}>Editar</MenuItem>
-                    <MenuItem onClick={handleClose}>Excluir</MenuItem>
+                    <MenuItem onClick={handleNavigateHome}>Home</MenuItem>
+                    <MenuItem onClick={handleNavigateAlunosPorCurso}>Alunos por curso</MenuItem>
                   </MenuList>
                 </ClickAwayListener>
               </Paper>
